@@ -35,14 +35,22 @@ namespace kudryavkaDiscordBot.discondClinet.Config
         /// <returns></returns>
         static public Configuration Load()
         {
-
             Configuration configuration = Singleton<Configuration>.Instance;
-            if (LoadEnvironment(configuration))
+
+            try
             {
-                return configuration;
+                if (LoadEnvironment(configuration) && configuration.DISCORD_TOKEN != null)
+                {
+                    return configuration;
+                }
             }
-            else if (LoadFile(configuration, "config/bot.json"))
-            {   
+            catch (SystemException)
+            {
+                // Log or handle the exception if necessary
+            }
+
+            if (LoadFile(configuration, "config/bot.json") && configuration.DISCORD_TOKEN != null)
+            {
                 return configuration;
             }
 
@@ -57,16 +65,10 @@ namespace kudryavkaDiscordBot.discondClinet.Config
         /// <returns></returns>
         public static bool LoadFile(Configuration config, string filePath)
         {
-            bool result = true;
             string jsonFileText = File.ReadAllText(filePath);
-            config = JsonConvert.DeserializeObject<Configuration>(jsonFileText);
+            JsonConvert.PopulateObject(jsonFileText, config);
             
-            if (config.DISCORD_TOKEN == null)
-            {
-                result = false;
-            }
-
-            return result;
+            return config.DISCORD_TOKEN != null;
         }
 
         /// <summary>
@@ -86,15 +88,16 @@ namespace kudryavkaDiscordBot.discondClinet.Config
                 config.NAVER_CLINET_SECRET = env["NAVER_CLINET_SECRET"].ToString();
                 config.DB_CONNECT = env["MYSQL_CONNECT"].ToString();
             }
-            catch (Exception )
+            catch (Exception e)
             {
-                result = false;
 #if DEBUG_EXCEPT
-                throw new SystemException(e);
+                throw new SystemException("Error loading environment variables.", e);
+#else
+                throw new SystemException("Error loading environment variables.", e);
 #endif
             }
 
-            return result;
+            return true; // If we reach here, it means no exception was thrown.
         }
 
     }

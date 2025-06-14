@@ -22,13 +22,13 @@ namespace kudryavkaDiscordBot.DiscondClinet
         /// <summary>
         /// Sington Value Initalize by ConfigurationHelper.Load()
         /// </summary>
-        Configuration configuration = Singleton<Configuration>.Instance;
+        Configuration configuration;
         public DiscordBot()
         {
-            ConfigurationHelper.Load();
-            if(configuration == null)
+            this.configuration = ConfigurationHelper.Load();
+            if(this.configuration == null || string.IsNullOrEmpty(this.configuration.DISCORD_TOKEN))
             {
-                new Exception("Load Erorr");
+                throw new Exception("Configuration loading failed or Discord token is missing.");
             }
         }
 
@@ -40,7 +40,7 @@ namespace kudryavkaDiscordBot.DiscondClinet
 
                 await InitializeAsync(services);
                 client.Log += LogAsync;
-                await client.LoginAsync(TokenType.Bot, configuration.DISCORD_TOKEN);
+                await client.LoginAsync(TokenType.Bot, this.configuration.DISCORD_TOKEN);
                 await client.StartAsync();
 
                 await Task.Delay(Timeout.Infinite);
